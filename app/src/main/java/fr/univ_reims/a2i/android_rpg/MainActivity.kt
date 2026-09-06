@@ -17,6 +17,8 @@ import fr.univ_reims.a2i.android_rpg.ui.theme.AndroidrpgTheme
 
 class Personnage(val nom: String, var pv: Int)
 
+data class Arme(val nom: String, val degats: Int)
+
 
 
 class MainActivity : ComponentActivity() {

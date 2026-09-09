@@ -4,8 +4,9 @@ package fr.univ_reims.a2i.android_rpg.modele
  * Logique de combat du fil rouge, en Kotlin pur (aucune dependance a Compose).
  *
  * Regroupe ce qui a ete construit des fiches 3 a 13 : attaque (fiche 3),
- * degats et transition d'etat (fiche 8), soin (fiche 8). Les fiches 14 a 16
- * branchent une interface Android par-dessus ce modele, sans le modifier.
+ * degats et transition d'etat (fiche 8), soin (fiche 8). La fiche 14 y ajoute
+ * deux manoeuvres sans degat ([bousculer], [passerTour]) ; les fiches 15-16
+ * branchent une interface Android par-dessus.
  */
 
 /** Applique [degats] a [perso] (PV bornes a 0) et met a jour son [Personnage.etat]. */
@@ -43,4 +44,33 @@ fun Personnage.soigner(montant: Int) {
     pv = minOf(pvMax, pv + montant)
     etat = EtatPersonnage.EnVie
     ChroniqueDeCombat.enregistrer("$nom recupere $montant PV ($pv/$pvMax)")
+}
+
+/**
+ * Bouscule [cible] pour la desequilibrer : elle passe [EtatPersonnage.Etourdi]
+ * pour [tours] tours **sans perdre un seul PV**. Sans effet si [cible] est vaincue.
+ *
+ * Deuxieme voie vers l'etat `Etourdi` (l'autre etant un gros coup, voir
+ * [subirDegats]) : ici l'etat change alors que les PV ne bougent pas.
+ */
+fun Personnage.bousculer(cible: Personnage, tours: Int = 2) {
+    if (cible.etat is EtatPersonnage.Vaincu) return
+    cible.etat = EtatPersonnage.Etourdi(toursRestants = tours)
+    ChroniqueDeCombat.enregistrer("$nom bouscule ${cible.nom} : etourdi $tours tour(s)")
+}
+
+/**
+ * Passe un tour : si le personnage est [EtatPersonnage.Etourdi], son etourdissement
+ * se dissipe d'un tour (retour a [EtatPersonnage.EnVie] au dernier). Sans effet
+ * sinon, et **ne touche jamais aux PV**.
+ */
+fun Personnage.passerTour() {
+    val etatCourant = etat
+    if (etatCourant !is EtatPersonnage.Etourdi) return
+    etat = if (etatCourant.toursRestants > 1) {
+        EtatPersonnage.Etourdi(etatCourant.toursRestants - 1)
+    } else {
+        EtatPersonnage.EnVie
+    }
+    ChroniqueDeCombat.enregistrer("$nom passe son tour ; ${decrireEtat(this)}")
 }

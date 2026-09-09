@@ -9,12 +9,18 @@ package fr.univ_reims.a2i.android_rpg.modele
  * branchent une interface Android par-dessus.
  */
 
-/** Applique [degats] a [perso] (PV bornes a 0) et met a jour son [Personnage.etat]. */
+/**
+ * Applique [degats] a [perso] (PV bornes a 0) et met a jour son [Personnage.etat].
+ * Un personnage deja [EtatPersonnage.Etourdi] le reste tant qu'un coup ne l'acheve pas :
+ * encaisser des degats ne dissipe pas l'etourdissement (voir [passerTour]).
+ */
 fun subirDegats(perso: Personnage, degats: Int) {
+    val etatAvant = perso.etat
     perso.pv = maxOf(0, perso.pv - degats)
     perso.etat = when {
         perso.pv <= 0 -> EtatPersonnage.Vaincu
         degats >= 10 -> EtatPersonnage.Etourdi(toursRestants = 2)
+        etatAvant is EtatPersonnage.Etourdi -> etatAvant
         else -> EtatPersonnage.EnVie
     }
 }
